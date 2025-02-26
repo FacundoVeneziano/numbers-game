@@ -1,101 +1,154 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+
+export default function NumberGame() {
+  const [secretCode, setSecretCode] = useState(["", "", "", "", ""]);
+  const [guesses, setGuesses] = useState<{ value: string; color: string }[][]>([]);
+  const [gameWon, setGameWon] = useState(false);
+
+  // Manejar cambios en el código secreto
+  const handleSecretChange = (index: number, value: string) => {
+    if (/^\d?$/.test(value)) {
+      const newSecret = [...secretCode];
+      newSecret[index] = value;
+      setSecretCode(newSecret);
+    }
+  };
+
+  // Agregar un nuevo intento
+  const addGuess = () => {
+    const newGuess = Array(5).fill(null).map(() => ({ value: "", color: "bg-gray-200" }));
+    setGuesses([...guesses, newGuess]);
+  };
+
+  // Manejar cambios en un intento
+  const handleGuessChange = (guessIndex: number, digitIndex: number, value: string) => {
+    if (/^\d?$/.test(value)) {
+      const newGuesses = [...guesses];
+      newGuesses[guessIndex][digitIndex] = { ...newGuesses[guessIndex][digitIndex], value };
+      setGuesses(newGuesses);
+      checkWin(newGuesses);
+    }
+  };
+
+  // Cambiar color de una casilla individual
+  const toggleColor = (guessIndex: number, digitIndex: number) => {
+    const newGuesses = [...guesses];
+    const currentColor = newGuesses[guessIndex][digitIndex].color;
+    const colors = ["bg-gray-200", "bg-red-500", "bg-yellow-500", "bg-green-500"];
+    const nextColorIndex = (colors.indexOf(currentColor) + 1) % colors.length;
+    newGuesses[guessIndex][digitIndex] = {
+      ...newGuesses[guessIndex][digitIndex],
+      color: colors[nextColorIndex],
+    };
+    setGuesses(newGuesses);
+    checkWin(newGuesses);
+  };
+
+  // Verificar si ganaste
+  const checkWin = (currentGuesses: { value: string; color: string }[][]) => {
+    const lastGuess = currentGuesses[currentGuesses.length - 1];
+    if (lastGuess && lastGuess.every((digit) => digit.color === "bg-green-500")) {
+      setGameWon(true);
+    }
+  };
+
+  // Reiniciar el juego
+  const resetGame = () => {
+    setSecretCode(["", "", "", "", ""]);
+    setGuesses([]);
+    setGameWon(false);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen flex flex-col items-center justify-start bg-gray-100 p-4">
+      {/* Título */}
+      <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 text-center">
+        Juego de Números
+      </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* Código secreto */}
+      <div className="mb-8 w-full max-w-xs sm:max-w-sm">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center">Tu código secreto</h2>
+        <div className="flex justify-center gap-2">
+          {secretCode.map((digit, index) => (
+            <input
+              key={index}
+              type="text"
+              value={digit}
+              onChange={(e) => handleSecretChange(index, e.target.value)}
+              className="w-12 h-12 text-center text-xl border-2 border-gray-300 rounded bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+              maxLength={1}
+              disabled={gameWon}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </div>
+
+      {/* Intentos */}
+      <div className="w-full max-w-xs sm:max-w-sm">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center">Tus intentos</h2>
+        {guesses.map((guess, guessIndex) => (
+          <div key={guessIndex} className="flex justify-center gap-2 mb-2">
+            {guess.map((digit, digitIndex) => (
+              <div
+                key={digitIndex}
+                className={`w-12 h-12 flex items-center justify-center text-xl border-2 border-gray-300 rounded cursor-pointer ${digit.color}`}
+                onClick={() => !gameWon && toggleColor(guessIndex, digitIndex)}
+              >
+                <input
+                  type="text"
+                  value={digit.value}
+                  onChange={(e) => handleGuessChange(guessIndex, digitIndex, e.target.value)}
+                  className="w-full h-full text-center bg-transparent text-gray-800 focus:outline-none"
+                  maxLength={1}
+                  disabled={gameWon}
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+        {!gameWon && (
+          <button
+            onClick={addGuess}
+            className="mt-4 w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Agregar intento
+          </button>
+        )}
+      </div>
+
+      {/* Mensaje de victoria */}
+      {gameWon && (
+        <div className="mt-6 text-center">
+          <h2 className="text-2xl font-bold text-green-600">¡Ganaste!</h2>
+          <div className="mt-4 flex justify-center gap-4">
+            <button
+              onClick={() => setGameWon(false)}
+              className="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              Ver historial
+            </button>
+            <button
+              onClick={resetGame}
+              className="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Jugar de nuevo
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Botón de reiniciar siempre visible cuando no has ganado */}
+      {!gameWon && guesses.length > 0 && (
+        <button
+          onClick={resetGame}
+          className="mt-6 py-2 px-4 bg-red-500 text-white rounded hover:bg-red-600"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Reiniciar partida
+        </button>
+      )}
     </div>
   );
 }
